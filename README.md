@@ -80,7 +80,12 @@ Upload và phân tích CV file.
   "metadata": {
     "filename": "cv_nguyen_van_a.pdf",
     "upload_time": "2025-11-12T08:45:00Z",
-    "processing_time_ms": 2200
+    "processing_time_ms": 2200,
+    "token_usage": {
+      "prompt_tokens": 1500,
+      "completion_tokens": 800,
+      "total_tokens": 2300
+    }
   }
 }
 ```
@@ -164,12 +169,17 @@ Mỗi response bao gồm metadata để theo dõi hiệu suất:
 - `filename`: Tên file CV được upload
 - `upload_time`: Thời điểm upload (ISO format)
 - `processing_time_ms`: Thời gian xử lý tính bằng milliseconds
+- `token_usage`: Thông tin về số token đã sử dụng (nếu có):
+  - `prompt_tokens`: Số token trong prompt
+  - `completion_tokens`: Số token trong response
+  - `total_tokens`: Tổng số token đã sử dụng
 
-Bạn có thể sử dụng `processing_time_ms` để:
+Bạn có thể sử dụng metadata để:
 
-- Benchmark hiệu suất của model
-- Theo dõi thời gian xử lý trung bình
-- Phát hiện các vấn đề về performance
+- **Benchmark hiệu suất model**: So sánh `processing_time_ms` giữa các requests
+- **Theo dõi chi phí**: Sử dụng `token_usage.total_tokens` để tính toán chi phí API
+- **Tối ưu prompt**: Phân tích `token_usage.prompt_tokens` để tối ưu độ dài prompt
+- **Phát hiện vấn đề**: Theo dõi thời gian xử lý và token usage để phát hiện anomalies
 
 ## Rate Limiting
 

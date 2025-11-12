@@ -11,7 +11,7 @@ import logging
 import time
 
 from config import config
-from models.schemas import CVAnalysisResponse, CVAnalysisData, Metadata, ErrorResponse
+from models.schemas import CVAnalysisResponse, CVAnalysisData, Metadata, TokenUsage, ErrorResponse
 from services.extraction import extract_text
 from services.llm_service import get_llm_service
 
@@ -225,6 +225,12 @@ async def upload_cv(
         # Calculate processing time
         processing_time_ms = int((time.time() - start_time) * 1000)
         
+        # Extract token usage if available
+        token_usage_data = analysis_result.pop("_token_usage", None)
+        token_usage = None
+        if token_usage_data:
+            token_usage = TokenUsage(**token_usage_data)
+        
         # Validate and wrap response with status, data, and metadata
         try:
             # Validate the data structure
@@ -233,7 +239,8 @@ async def upload_cv(
             metadata = Metadata(
                 filename=filename,
                 upload_time=upload_time,
-                processing_time_ms=processing_time_ms
+                processing_time_ms=processing_time_ms,
+                token_usage=token_usage
             )
             # Wrap with status, data, and metadata
             response = CVAnalysisResponse(status="success", data=data, metadata=metadata)

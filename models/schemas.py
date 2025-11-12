@@ -30,11 +30,19 @@ class CVAnalysisData(BaseModel):
     suggestions: List[str] = Field(..., description="Gợi ý cải thiện CV (tiếng Việt)")
 
 
+class TokenUsage(BaseModel):
+    """Token usage information"""
+    prompt_tokens: int = Field(..., description="Number of tokens in the prompt")
+    completion_tokens: int = Field(..., description="Number of tokens in the completion")
+    total_tokens: int = Field(..., description="Total tokens used")
+
+
 class Metadata(BaseModel):
     """Metadata for benchmarking and tracking"""
     filename: str = Field(..., description="Original filename of uploaded CV")
     upload_time: str = Field(..., description="Upload timestamp in ISO format")
     processing_time_ms: int = Field(..., description="Processing time in milliseconds")
+    token_usage: Optional[TokenUsage] = Field(None, description="Token usage information from LLM")
 
 
 class CVAnalysisResponse(BaseModel):
@@ -62,7 +70,12 @@ class CVAnalysisResponse(BaseModel):
                 "metadata": {
                     "filename": "cv_nguyen_van_a.pdf",
                     "upload_time": "2025-11-12T08:45:00Z",
-                    "processing_time_ms": 2200
+                    "processing_time_ms": 2200,
+                    "token_usage": {
+                        "prompt_tokens": 1500,
+                        "completion_tokens": 800,
+                        "total_tokens": 2300
+                    }
                 }
             }
         }

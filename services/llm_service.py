@@ -100,6 +100,33 @@ class LLMService:
                 raise ValueError("Empty response from Gemini API")
             
             result = self._extract_json_from_response(response.text)
+            
+            # Extract token usage from Gemini response
+            token_usage = None
+            try:
+                # Gemini API returns usage_metadata in response
+                if hasattr(response, 'usage_metadata') and response.usage_metadata:
+                    usage = response.usage_metadata
+                    token_usage = {
+                        "prompt_tokens": getattr(usage, 'prompt_token_count', 0) or 0,
+                        "completion_tokens": getattr(usage, 'candidates_token_count', 0) or 0,
+                        "total_tokens": getattr(usage, 'total_token_count', 0) or 0
+                    }
+                # Alternative: check response.usage (for some API versions)
+                elif hasattr(response, 'usage') and response.usage:
+                    usage = response.usage
+                    token_usage = {
+                        "prompt_tokens": getattr(usage, 'prompt_token_count', 0) or 0,
+                        "completion_tokens": getattr(usage, 'candidates_token_count', 0) or 0,
+                        "total_tokens": getattr(usage, 'total_token_count', 0) or 0
+                    }
+            except Exception:
+                # If token usage is not available, continue without it
+                token_usage = None
+            
+            if token_usage and token_usage.get("total_tokens", 0) > 0:
+                result["_token_usage"] = token_usage
+            
             return result
         
         except Exception as e:
@@ -141,6 +168,16 @@ class LLMService:
                 raise ValueError("Empty response from OpenAI API")
             
             result = self._extract_json_from_response(content)
+            
+            # Extract token usage from OpenAI response
+            if hasattr(response, 'usage') and response.usage:
+                token_usage = {
+                    "prompt_tokens": response.usage.prompt_tokens,
+                    "completion_tokens": response.usage.completion_tokens,
+                    "total_tokens": response.usage.total_tokens
+                }
+                result["_token_usage"] = token_usage
+            
             return result
         
         except Exception as e:
