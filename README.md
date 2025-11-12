@@ -1,262 +1,75 @@
-# CV Scoring API - Hướng dẫn Sử dụng
+# CV Scoring API
 
-Hệ thống phân tích và chấm điểm CV tự động sử dụng AI (Gemini hoặc OpenAI).
+Hệ thống backend sử dụng FastAPI và LLM (Google Gemini hoặc OpenAI) để tự động đánh giá chất lượng CV. Mục tiêu chính là cung cấp báo cáo chấm điểm chi tiết, nhận diện cấp độ ứng viên, xác định lĩnh vực chuyên môn và đề xuất cải thiện – tất cả bằng tiếng Việt.
 
-## Tổng quan
+## Giá trị cốt lõi
 
-API này cung cấp phân tích toàn diện CV bao gồm:
+- **Phân tích tự động**: Trích xuất nội dung từ PDF/DOCX và gửi tới LLM để chấm điểm.
+- **Điểm số rõ ràng**: Mỗi tiêu chí đều có điểm (0-100) kèm lý do chi tiết bằng tiếng Việt.
+- **Hiểu ứng viên**: Xác định level (intern/junior/mid/senior) và lĩnh vực chuyên môn từ kinh nghiệm thực tế.
+- **Insight hành động**: Liệt kê điểm mạnh, điểm yếu và gợi ý cải thiện cụ thể cho ứng viên.
+- **Theo dõi hiệu suất**: Metadata đi kèm giúp đo thời gian xử lý, token sử dụng và truy vết file.
 
-- Điểm số chi tiết theo từng hạng mục (format, experience, skills, education, portfolio, certificates)
-- Lý do cụ thể cho từng điểm số kèm dẫn chứng
-- Xác định cấp độ chuyên nghiệp (intern/junior/mid/senior)
-- Nhận diện lĩnh vực chuyên môn
-- Điểm mạnh và điểm yếu
-- Gợi ý cải thiện CV
+## Kiến trúc tổng quan
 
-## API Endpoints
+- **FastAPI backend**: Một dịch vụ duy nhất xử lý upload, trích xuất, gọi LLM và trả JSON chuẩn hóa.
+- **LLM service layer**: Tầng trung gian cho phép chọn Gemini hoặc OpenAI chỉ bằng biến môi trường.
+- **Text extraction service**: Sử dụng PyMuPDF và python-docx để đọc file PDF/DOCX ổn định.
+- **Prompt builder**: Định nghĩa format JSON đầu ra và yêu cầu LLM trả lời hoàn toàn bằng tiếng Việt.
+- **Schema chuẩn hóa**: Pydantic đảm bảo response có cấu trúc `status`, `data`, `metadata`, dễ consume cho frontend.
+- **Rate limiting**: SlowAPI tránh lạm dụng endpoint upload công khai.
+- **Logging & metadata**: Ghi nhận filename, upload time, processing_time_ms và token_usage cho mục đích benchmark.
 
-### POST `/upload-cv`
+## Luồng xử lý
 
-Upload và phân tích CV file.
+1. Người dùng upload CV (PDF hoặc DOCX) qua endpoint công khai.
+2. FastAPI kiểm tra định dạng, dung lượng và trích xuất text.
+3. Prompt được dựng bằng tiếng Việt, yêu cầu chấm điểm chi tiết + lý do.
+4. LLM (Gemini/OpenAI) trả về JSON đúng cấu trúc quy định.
+5. API chuẩn hóa response, bổ sung metadata và trả về cho frontend.
 
-**Request:**
+## Các tiêu chí chấm điểm
 
-- Method: `POST`
-- Content-Type: `multipart/form-data`
-- Body:
-  - `file`: CV file (PDF hoặc DOCX) - **required**
+- `format`: Bố cục, cấu trúc, mức độ dễ đọc của CV.
+- `experience`: Kinh nghiệm liên quan trực tiếp đến lĩnh vực ứng viên.
+- `skills`: Hard skills quan trọng, đánh giá theo mức độ thành thạo.
+- `soft_skills`: Kỹ năng mềm được thể hiện trong CV.
+- `education`: Bằng cấp, chuyên ngành, GPA (nếu có).
+- `portfolio`: Dự án, sản phẩm, liên kết chứng minh năng lực.
+- `certificates`: Chứng chỉ chuyên môn và ngoại ngữ.
 
-**Response:**
+Mỗi tiêu chí bao gồm `{ "score": 0-100, "reason": "lí do bằng tiếng Việt" }`.
 
-```json
-{
-  "status": "success",
-  "data": {
-    "overall_score": 85,
-    "level": "junior",
-    "field": "Phát triển phần mềm",
-    "scores": {
-      "format": {
-        "score": 90,
-        "reason": "CV có cấu trúc rõ ràng, bố cục hợp lý, dễ đọc. Các phần được tổ chức theo thứ tự logic."
-      },
-      "experience": {
-        "score": 80,
-        "reason": "Kinh nghiệm làm việc phù hợp với vị trí, có các dự án liên quan. Tuy nhiên thiếu số liệu cụ thể về thành tựu."
-      },
-      "skills": {
-        "score": 85,
-        "reason": "Kỹ năng được liệt kê đầy đủ và phù hợp với lĩnh vực. Bao gồm cả technical và soft skills."
-      },
-      "education": {
-        "score": 90,
-        "reason": "Có bằng đại học, chuyên ngành liên quan. GPA tốt và có các khóa học bổ sung."
-      },
-      "portfolio": {
-        "score": 10,
-        "reason": "Chưa có portfolio được đề cập hoặc link không hoạt động. Nên thêm các dự án cụ thể."
-      },
-      "certificates": {
-        "score": 15,
-        "reason": "Có một số chứng chỉ nhưng còn thiếu các chứng chỉ quan trọng như AWS, Google Cloud, etc."
-      }
-    },
-    "strengths": [
-      "Phần kinh nghiệm làm việc rõ ràng và chi tiết",
-      "Kỹ năng kỹ thuật phù hợp được liệt kê đầy đủ",
-      "Nền tảng giáo dục tốt với bằng đại học chuyên ngành"
-    ],
-    "weaknesses": [
-      "Ít dự án portfolio được đề cập hoặc không có link",
-      "Thiếu chứng chỉ chuyên nghiệp quan trọng",
-      "Có thể mở rộng thêm về thành tựu và số liệu cụ thể"
-    ],
-    "suggestions": [
-      "Thêm nhiều dự án portfolio kèm link GitHub hoặc demo",
-      "Bao gồm các chứng chỉ liên quan (AWS, Google Cloud, etc.)",
-      "Định lượng thành tựu bằng số liệu cụ thể (ví dụ: tăng 30% hiệu suất)"
-    ]
-  },
-  "metadata": {
-    "filename": "cv_nguyen_van_a.pdf",
-    "upload_time": "2025-11-12T08:45:00Z",
-    "processing_time_ms": 2200,
-    "token_usage": {
-      "prompt_tokens": 1500,
-      "completion_tokens": 800,
-      "total_tokens": 2300
-    }
-  }
-}
-```
+## Thông tin trích xuất bổ sung
 
-### GET `/health`
+- `info.name`, `info.phone`, `info.email`, `info.location`: lấy từ CV, nếu không tìm thấy thì để chuỗi rỗng.
+- Các trường dữ liệu khác (`strengths`, `weaknesses`, `suggestions`) luôn trả về danh sách string tiếng Việt.
 
-Kiểm tra trạng thái API.
+## Tích hợp LLM
 
-**Response:**
+- Cấu hình `LLM_PROVIDER` để chuyển nhanh giữa `gemini` và `openai`.
+- Tracking `token_usage` (prompt, completion, total) để quản lý chi phí.
+- Hỗ trợ lazy initialization để tránh lỗi khi thiếu API key.
 
-```json
-{
-  "status": "healthy"
-}
-```
+## Hạn chế & lưu ý
 
-### GET `/`
+- Kết quả phụ thuộc chất lượng CV và model LLM hiện tại.
+- Không lưu trữ file CV, toàn bộ xử lý nằm trong request.
+- Nên triển khai HTTPS và cơ chế auth nếu dùng trong môi trường production.
 
-Thông tin API.
+## Deployment nhanh
 
-**Response:**
+- **Docker Compose**: `docker compose up -d --build` để build và chạy images.
 
-```json
-{
-  "message": "CV Scoring API",
-  "version": "1.0.0",
-  "status": "running",
-  "docs": "/docs",
-  "health": "/health"
-}
-```
+Chi tiết cài đặt, requirements và thiết lập môi trường nằm trong `INSTALL.md`.
 
-## Ví dụ sử dụng
+## Tài liệu API
 
-### Sử dụng cURL
+- Swagger UI: `http://localhost:{PORT}/docs`
 
-```bash
-curl -X POST "http://localhost:3001/upload-cv" \
-  -H "accept: application/json" \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@/path/to/your/cv.pdf"
-```
+Các endpoint được mô tả trực tiếp trong tài liệu tự sinh từ FastAPI.
 
-### Sử dụng Python requests
+## Liên hệ & đóng góp
 
-```python
-import requests
-
-url = "http://localhost:3001/upload-cv"
-files = {"file": open("cv.pdf", "rb")}
-
-response = requests.post(url, files=files)
-result = response.json()
-
-print(f"Overall Score: {result['data']['overall_score']}")
-print(f"Level: {result['data']['level']}")
-print(f"Field: {result['data']['field']}")
-print(f"Processing Time: {result['metadata']['processing_time_ms']}ms")
-```
-
-### Sử dụng JavaScript (Fetch API)
-
-```javascript
-const formData = new FormData();
-formData.append("file", fileInput.files[0]);
-
-const response = await fetch("http://localhost:3001/upload-cv", {
-  method: "POST",
-  body: formData,
-});
-
-const result = await response.json();
-console.log("Overall Score:", result.data.overall_score);
-console.log("Processing Time:", result.metadata.processing_time_ms, "ms");
-```
-
-## Metadata cho Benchmarking
-
-Mỗi response bao gồm metadata để theo dõi hiệu suất:
-
-- `filename`: Tên file CV được upload
-- `upload_time`: Thời điểm upload (ISO format)
-- `processing_time_ms`: Thời gian xử lý tính bằng milliseconds
-- `token_usage`: Thông tin về số token đã sử dụng (nếu có):
-  - `prompt_tokens`: Số token trong prompt
-  - `completion_tokens`: Số token trong response
-  - `total_tokens`: Tổng số token đã sử dụng
-
-Bạn có thể sử dụng metadata để:
-
-- **Benchmark hiệu suất model**: So sánh `processing_time_ms` giữa các requests
-- **Theo dõi chi phí**: Sử dụng `token_usage.total_tokens` để tính toán chi phí API
-- **Tối ưu prompt**: Phân tích `token_usage.prompt_tokens` để tối ưu độ dài prompt
-- **Phát hiện vấn đề**: Theo dõi thời gian xử lý và token usage để phát hiện anomalies
-
-## Rate Limiting
-
-Mặc định: 10 requests/phút cho mỗi IP address.
-
-Có thể cấu hình trong file `.env`:
-
-```env
-RATE_LIMIT_PER_MINUTE=10
-```
-
-Khi vượt quá giới hạn, API sẽ trả về:
-
-```json
-{
-  "error": "Rate limit exceeded",
-  "detail": "Too many requests. Please try again later."
-}
-```
-
-## Error Handling
-
-### 400 Bad Request
-
-```json
-{
-  "error": "Unsupported file format",
-  "detail": "Only PDF and DOCX files are supported"
-}
-```
-
-### 429 Too Many Requests
-
-```json
-{
-  "error": "Rate limit exceeded",
-  "detail": "Too many requests. Please try again later."
-}
-```
-
-### 500 Internal Server Error
-
-```json
-{
-  "error": "Internal server error",
-  "detail": "An error occurred while processing your request"
-}
-```
-
-## Cấu hình
-
-Tất cả cấu hình được thực hiện qua file `.env`:
-
-- `LLM_PROVIDER`: Provider AI sử dụng ("gemini" hoặc "openai")
-- `GEMINI_API_KEY`: API key cho Gemini
-- `OPENAI_API_KEY`: API key cho OpenAI
-- `OPENAI_MODEL`: Model OpenAI sử dụng (mặc định: "gpt-4")
-- `RATE_LIMIT_PER_MINUTE`: Giới hạn request/phút (mặc định: 10)
-- `MAX_FILE_SIZE`: Kích thước file tối đa (mặc định: 10MB)
-- `PORT`: Port cho API server (mặc định: 3001)
-
-Xem file `INSTALL.md` để biết chi tiết về cài đặt và cấu hình.
-
-## API Documentation
-
-Khi server đang chạy, truy cập:
-
-- **Swagger UI**: http://localhost:3001/docs
-- **ReDoc**: http://localhost:3001/redoc
-
-## Tính mở rộng
-
-Hệ thống được thiết kế để dễ dàng mở rộng:
-
-- Thêm các hạng mục đánh giá mới trong `ScoreBreakdown`
-- Thêm metadata mới trong `Metadata` model
-- Tích hợp thêm LLM providers khác
-- Thêm các tính năng phân tích nâng cao
-
-Xem `models/schemas.py` để biết cấu trúc dữ liệu chi tiết.
+- Hãy mở issue nếu phát hiện bug, ý tưởng mới hoặc cần hỗ trợ.
+- Pull request được hoan nghênh cho các tính năng như caching, auth, UI upload mẫu, v.v.

@@ -1,0 +1,14 @@
+services:
+  cv-scoring-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cv-scoring-api:1.0
+    container_name: cv-scoring-api
+    ports:
+      - "${PORT}:${PORT}"
+    env_file:
+      - .env
+    environment:
+      - PORT=${PORT}
+    restart: unless-stopped
