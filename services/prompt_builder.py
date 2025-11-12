@@ -25,7 +25,13 @@ Hướng dẫn chi tiết:
    - mid: 3-5 năm
    - senior: >5 năm
 3. **field**: Nếu CV có ghi mục tiêu nghề nghiệp hoặc lĩnh vực, lấy ra chính xác; nếu không có thì dựa trên kinh nghiệm và kỹ năng liên quan. Tuyệt đối không bịa đặt.
-4. **scores** (0-100, kèm reason cụ thể):
+4. **info**: Trích xuất thông tin cơ bản từ CV:
+   - name: Tên ứng viên (từ phần header hoặc thông tin cá nhân)
+   - phone: Số điện thoại (nếu có)
+   - email: Email (nếu có)
+   - location: Địa chỉ hoặc thành phố (nếu có)
+   Nếu không tìm thấy thông tin nào, để trống string rỗng "".
+5. **scores** (0-100, kèm reason cụ thể):
    - format: Cấu trúc, bố cục, tiêu đề, font, khoảng cách, dễ đọc. Nêu ví dụ từ CV.
    - experience: Chỉ đánh giá kinh nghiệm liên quan đến field/role. Phân loại theo loại kinh nghiệm: full-time, part-time, internship, volunteer. Điểm đánh giá dựa trên **impact dự án/role** và cấp độ ứng viên. Nêu số năm, vai trò, dự án cụ thể. Không đánh giá kinh nghiệm không liên quan.
    - skills: Phân biệt **hard skill** và **soft skill**. Chỉ đánh giá các kỹ năng liên quan field/role, theo level ứng viên. Đánh giá **mức độ thành thạo**: basic, intermediate, advanced. Tránh lan man.
@@ -33,9 +39,9 @@ Hướng dẫn chi tiết:
    - education: Đánh giá bằng cấp, chuyên ngành, GPA (nếu có). Thang điểm Việt Nam: 4 điểm: Xuất sắc 3.6-4.0, Giỏi 3.2-3.59, Khá 2.5-3.19, Trung bình 2.0-2.49, Yếu <2.0. 10 điểm: Giỏi 8.5-10, Khá giỏi 8.0-8.4, Khá 7.0-7.9, Trung bình khá 6.5-6.9. Nêu xếp loại, ý nghĩa với role.
    - portfolio: Đánh giá sự hiện diện và chất lượng portfolio/dự án hoặc link liên quan (GitHub, website, case study...). Cộng điểm nếu có, không trừ nếu không có. Nêu ví dụ cụ thể.
    - certificates: Đánh giá chứng chỉ liên quan field/role, bao gồm cả chứng chỉ nghề, chứng chỉ online (Coursera, Udemy, Google, Microsoft…). Với một số ngành (Kinh tế, Logistics, IT, kỹ thuật) chứng chỉ đặc thù là điểm cộng lớn. Nêu rõ có hay không và tác động đến scoring.
-5. **strengths**: Liệt kê 3-5 điểm mạnh nổi bật, bằng tiếng Việt, mỗi dòng 1 item, tránh lặp từ.
-6. **weaknesses**: Liệt kê 3-5 điểm cần cải thiện, liên quan field/level, bằng tiếng Việt, mỗi dòng 1 item, tránh lan man.
-7. **suggestions**: 3-5 gợi ý cải thiện CV, logic theo level, field, strengths/weaknesses, bằng tiếng Việt, mỗi dòng 1 item.
+6. **strengths**: Liệt kê 3-5 điểm mạnh nổi bật, bằng tiếng Việt, mỗi dòng 1 item, tránh lặp từ.
+7. **weaknesses**: Liệt kê 3-5 điểm cần cải thiện, liên quan field/level, bằng tiếng Việt, mỗi dòng 1 item, tránh lan man.
+8. **suggestions**: 3-5 gợi ý cải thiện CV, logic theo level, field, strengths/weaknesses, bằng tiếng Việt, mỗi dòng 1 item.
 
 QUAN TRỌNG:
 - Mỗi score phải có score và reason cụ thể, dẫn chứng từ CV, tránh lặp từ chung chung.
@@ -48,6 +54,12 @@ QUAN TRỌNG:
   "overall_score": <0-100>,
   "level": "<intern|junior|mid|senior>",
   "field": "<tên lĩnh vực bằng tiếng Việt>",
+  "info": {{
+    "name": "<tên ứng viên hoặc '' nếu không có>",
+    "phone": "<số điện thoại hoặc '' nếu không có>",
+    "email": "<email hoặc '' nếu không có>",
+    "location": "<địa chỉ/thành phố hoặc '' nếu không có>"
+  }},
   "scores": {{
     "format": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV>"}},
     "experience": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV, chỉ kinh nghiệm liên quan, theo impact và level>"}},

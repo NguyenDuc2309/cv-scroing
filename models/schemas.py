@@ -20,11 +20,20 @@ class ScoreBreakdown(BaseModel):
     certificates: ScoreWithReason = Field(..., description="Điểm certificates và lý do")
 
 
+class CVInfo(BaseModel):
+    """Basic information extracted from CV"""
+    name: str = Field(default="", description="Tên ứng viên (để trống nếu không tìm thấy)")
+    phone: str = Field(default="", description="Số điện thoại (để trống nếu không tìm thấy)")
+    email: str = Field(default="", description="Email (để trống nếu không tìm thấy)")
+    location: str = Field(default="", description="Địa chỉ/Thành phố (để trống nếu không tìm thấy)")
+
+
 class CVAnalysisData(BaseModel):
     """CV analysis data"""
     overall_score: int = Field(..., ge=0, le=100, description="Điểm tổng thể CV (0-100)")
     level: str = Field(..., description="Cấp độ chuyên nghiệp: 'intern', 'junior', 'mid', hoặc 'senior'")
     field: str = Field(..., description="Lĩnh vực chuyên môn (ví dụ: 'Phát triển phần mềm', 'Marketing')")
+    info: CVInfo = Field(..., description="Thông tin cơ bản trích xuất từ CV")
     scores: ScoreBreakdown = Field(..., description="Chi tiết điểm số theo từng hạng mục")
     strengths: List[str] = Field(..., description="Danh sách điểm mạnh của CV (tiếng Việt)")
     weaknesses: List[str] = Field(..., description="Danh sách điểm yếu của CV (tiếng Việt)")
@@ -56,6 +65,12 @@ class CVAnalysisResponse(BaseModel):
                     "overall_score": 85,
                     "level": "junior",
                     "field": "Phát triển phần mềm",
+                    "info": {
+                        "name": "Nguyễn Văn A",
+                        "phone": "0901234567",
+                        "email": "nguyenvana@email.com",
+                        "location": "Hà Nội, Việt Nam"
+                    },
                     "scores": {
                         "format": {"score": 90, "reason": "CV có cấu trúc rõ ràng, bố cục hợp lý"},
                         "experience": {"score": 80, "reason": "Kinh nghiệm phù hợp với vị trí"},

@@ -31,44 +31,7 @@ async def lifespan(app: FastAPI):
 # Initialize FastAPI app
 app = FastAPI(
     title="CV Scoring API",
-    description="""
-## AI-Powered CV Analysis and Scoring System
-
-This API provides comprehensive CV analysis using AI (Gemini or OpenAI) to evaluate:
-
-**CV Format & Structure** - Organization and presentation quality
-
-**Work Experience** - Relevance and quality of professional experience
-
-**Skills** - Relevance of skills to identified field
-
-**Education** - Educational background and qualifications
-
-**Portfolio** - Presence of portfolio/projects
-
-**Certificates** - Professional certifications (English, technical, etc.)
-
-### Features
-- Automatic professional level detection (intern/junior/mid/senior)
-- Field/domain identification
-- Detailed scoring breakdown
-- Strengths and weaknesses analysis
-- Actionable improvement suggestions
-
-### Supported Formats
-- PDF files
-- DOCX (Word) files
-
-### Rate Limiting
-Default: 10 requests per minute per IP address (configurable)
-""".strip(),
     version="1.0.0",
-    contact={
-        "name": "CV Scoring API Support",
-    },
-    license_info={
-        "name": "MIT",
-    },
     lifespan=lifespan,
 )
 
@@ -137,14 +100,6 @@ async def health():
     "/upload-cv",
     tags=["CV Analysis"],
     summary="Upload and analyze CV",
-    description="Upload a CV file (PDF or DOCX) and receive comprehensive AI-powered analysis. The analysis includes overall score, professional level detection, field identification, detailed score breakdown, strengths, weaknesses, and improvement suggestions.",
-    response_description="CV analysis results with scoring and recommendations",
-    responses={
-        200: {
-            "description": "Successful analysis",
-            "model": CVAnalysisResponse
-        },
-    }
 )
 @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute")
 async def upload_cv(
