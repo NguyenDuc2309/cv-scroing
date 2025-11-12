@@ -14,6 +14,7 @@ class ScoreBreakdown(BaseModel):
     format: ScoreWithReason = Field(..., description="Điểm format và lý do")
     experience: ScoreWithReason = Field(..., description="Điểm experience và lý do")
     skills: ScoreWithReason = Field(..., description="Điểm skills và lý do")
+    soft_skills: ScoreWithReason = Field(..., description="Điểm soft_skills và lý do")
     education: ScoreWithReason = Field(..., description="Điểm education và lý do")
     portfolio: ScoreWithReason = Field(..., description="Điểm portfolio và lý do")
     certificates: ScoreWithReason = Field(..., description="Điểm certificates và lý do")
@@ -59,6 +60,7 @@ class CVAnalysisResponse(BaseModel):
                         "format": {"score": 90, "reason": "CV có cấu trúc rõ ràng, bố cục hợp lý"},
                         "experience": {"score": 80, "reason": "Kinh nghiệm phù hợp với vị trí"},
                         "skills": {"score": 85, "reason": "Kỹ năng được liệt kê đầy đủ"},
+                        "soft_skills": {"score": 85, "reason": "Kỹ năng mềm được liệt kê đầy đủ"},
                         "education": {"score": 90, "reason": "Có bằng đại học chuyên ngành"},
                         "portfolio": {"score": 10, "reason": "Chưa có portfolio được đề cập"},
                         "certificates": {"score": 15, "reason": "Thiếu chứng chỉ quan trọng"}
@@ -84,10 +86,3 @@ class CVAnalysisResponse(BaseModel):
     status: str = Field(..., description="Status of the response")
     data: CVAnalysisData = Field(..., description="CV analysis data")
     metadata: Metadata = Field(..., description="Metadata for benchmarking and tracking")
-
-
-class ErrorResponse(BaseModel):
-    """Error response model"""
-    error: str = Field(..., description="Error message")
-    detail: Optional[str] = Field(None, description="Additional error details")
-

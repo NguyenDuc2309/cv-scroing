@@ -1,6 +1,8 @@
 def build_cv_analysis_prompt(cv_text: str) -> str:
     """
-    Build a structured prompt for CV analysis using LLM.
+    Build an optimized prompt for CV analysis using LLM,
+    adding soft skills, detailed experience evaluation, skill proficiency levels,
+    and optimized certificates scoring per field.
     
     Args:
         cv_text: Extracted text from CV file
@@ -8,59 +10,56 @@ def build_cv_analysis_prompt(cv_text: str) -> str:
     Returns:
         Formatted prompt string
     """
-    prompt = f"""Phân tích CV sau đây và đưa ra đánh giá toàn diện.
-Trả về kết quả dưới dạng JSON object hợp lệ với cấu trúc chính xác như mô tả bên dưới.
+    prompt = f"""Phân tích CV sau đây và đưa ra đánh giá toàn diện. 
+Trả về CHỈ một JSON object hợp lệ, KHÔNG markdown, code block, hoặc text bổ sung.
 
 Nội dung CV:
 {cv_text}
 
-Hãy phân tích CV này và cung cấp:
+Hướng dẫn chi tiết:
 
-1. **Điểm tổng thể (0-100)**: Điểm trung bình có trọng số dựa trên tất cả các yếu tố bên dưới
-2. **Cấp độ**: Xác định cấp độ chuyên nghiệp dựa trên kinh nghiệm làm việc:
-   - "intern": Không có hoặc ít kinh nghiệm làm việc (< 1 năm)
-   - "junior": 1-3 năm kinh nghiệm
-   - "mid": 3-5 năm kinh nghiệm
-   - "senior": 5+ năm kinh nghiệm
-3. **Lĩnh vực**: Xác định lĩnh vực chuyên môn chính (ví dụ: "Phát triển phần mềm", "Marketing", "Tài chính")
-4. **Chi tiết điểm số** (mỗi mục 0-100):
-   - format: Cấu trúc CV, tổ chức, rõ ràng, chất lượng định dạng
-   - experience: Mức độ phù hợp và chất lượng kinh nghiệm làm việc với lĩnh vực
-   - skills: Mức độ phù hợp của kỹ năng với lĩnh vực đã xác định
-   - education: Trình độ học vấn (có bằng đại học là điểm cộng, học vấn cao hơn điểm cao hơn)
-   - portfolio: Sự hiện diện và đề cập đến portfolio/dự án (có điểm thưởng nếu có)
-   - certificates: Sự hiện diện của các chứng chỉ liên quan (tiếng Anh, chứng chỉ kỹ thuật, v.v.)
-5. **Lý do điểm số**: Với mỗi điểm số ở trên, phải cung cấp lý do cụ thể tại sao đưa ra điểm đó (bằng tiếng Việt)
-6. **Điểm mạnh**: Liệt kê 3-5 điểm mạnh chính của CV (bằng tiếng Việt)
-7. **Điểm yếu**: Liệt kê 3-5 lĩnh vực cần cải thiện (bằng tiếng Việt)
-8. **Gợi ý**: Đưa ra 3-5 gợi ý hành động để cải thiện CV (bằng tiếng Việt)
+1. **overall_score (0-100)**: Trung bình có trọng số của tất cả các tiêu chí dưới.
+2. **level**: Xác định cấp độ dựa trên kinh nghiệm làm việc thực tế:
+   - intern: <1 năm hoặc không có kinh nghiệm
+   - junior: 1-3 năm
+   - mid: 3-5 năm
+   - senior: >5 năm
+3. **field**: Nếu CV có ghi mục tiêu nghề nghiệp hoặc lĩnh vực, lấy ra chính xác; nếu không có thì dựa trên kinh nghiệm và kỹ năng liên quan. Tuyệt đối không bịa đặt.
+4. **scores** (0-100, kèm reason cụ thể):
+   - format: Cấu trúc, bố cục, tiêu đề, font, khoảng cách, dễ đọc. Nêu ví dụ từ CV.
+   - experience: Chỉ đánh giá kinh nghiệm liên quan đến field/role. Phân loại theo loại kinh nghiệm: full-time, part-time, internship, volunteer. Điểm đánh giá dựa trên **impact dự án/role** và cấp độ ứng viên. Nêu số năm, vai trò, dự án cụ thể. Không đánh giá kinh nghiệm không liên quan.
+   - skills: Phân biệt **hard skill** và **soft skill**. Chỉ đánh giá các kỹ năng liên quan field/role, theo level ứng viên. Đánh giá **mức độ thành thạo**: basic, intermediate, advanced. Tránh lan man.
+   - soft_skills: Đánh giá kỹ năng mềm nổi bật như giao tiếp, teamwork, leadership, adaptability, initiative. Tăng điểm nếu phù hợp với level ứng viên.
+   - education: Đánh giá bằng cấp, chuyên ngành, GPA (nếu có). Thang điểm Việt Nam: 4 điểm: Xuất sắc 3.6-4.0, Giỏi 3.2-3.59, Khá 2.5-3.19, Trung bình 2.0-2.49, Yếu <2.0. 10 điểm: Giỏi 8.5-10, Khá giỏi 8.0-8.4, Khá 7.0-7.9, Trung bình khá 6.5-6.9. Nêu xếp loại, ý nghĩa với role.
+   - portfolio: Đánh giá sự hiện diện và chất lượng portfolio/dự án hoặc link liên quan (GitHub, website, case study...). Cộng điểm nếu có, không trừ nếu không có. Nêu ví dụ cụ thể.
+   - certificates: Đánh giá chứng chỉ liên quan field/role, bao gồm cả chứng chỉ nghề, chứng chỉ online (Coursera, Udemy, Google, Microsoft…). Với một số ngành (Kinh tế, Logistics, IT, kỹ thuật) chứng chỉ đặc thù là điểm cộng lớn. Nêu rõ có hay không và tác động đến scoring.
+5. **strengths**: Liệt kê 3-5 điểm mạnh nổi bật, bằng tiếng Việt, mỗi dòng 1 item, tránh lặp từ.
+6. **weaknesses**: Liệt kê 3-5 điểm cần cải thiện, liên quan field/level, bằng tiếng Việt, mỗi dòng 1 item, tránh lan man.
+7. **suggestions**: 3-5 gợi ý cải thiện CV, logic theo level, field, strengths/weaknesses, bằng tiếng Việt, mỗi dòng 1 item.
 
-QUAN TRỌNG: Trả về CHỈ một JSON object hợp lệ với định dạng chính xác này (không markdown, không code blocks, không text thêm):
+QUAN TRỌNG:
+- Mỗi score phải có score và reason cụ thể, dẫn chứng từ CV, tránh lặp từ chung chung.
+- TẤT CẢ nội dung bằng TIẾNG VIỆT (trừ level và số điểm).
+- Trả về CHỈ JSON object, không ký tự escape, không xuống dòng trong arrays.
+- Bắt đầu trực tiếp với {{ và kết thúc bằng }}.
+- Tuân thủ cấu trúc JSON:
+
 {{
-  "overall_score": <số 0-100>,
+  "overall_score": <0-100>,
   "level": "<intern|junior|mid|senior>",
   "field": "<tên lĩnh vực bằng tiếng Việt>",
   "scores": {{
-    "format": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}},
-    "experience": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}},
-    "skills": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}},
-    "education": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}},
-    "portfolio": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}},
-    "certificates": {{"score": <số 0-100>, "reason": "<lý do và dẫn chứng bằng tiếng Việt>"}}
+    "format": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV>"}},
+    "experience": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV, chỉ kinh nghiệm liên quan, theo impact và level>"}},
+    "skills": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV, hard/soft skill, mức độ thành thạo, theo level>"}},
+    "soft_skills": {{"score": <0-100>, "reason": "<lý do cụ thể từ CV, kỹ năng mềm nổi bật>"}},
+    "education": {{"score": <0-100>, "reason": "<lý do cụ thể, GPA/thang điểm Việt Nam>"}},
+    "portfolio": {{"score": <0-100>, "reason": "<lý do cụ thể, link/project có hay không>"}},
+    "certificates": {{"score": <0-100>, "reason": "<lý do cụ thể, chứng chỉ liên quan ngành, online, đặc thù>"}}
   }},
-  "strengths": ["<điểm mạnh 1 bằng tiếng Việt>", "<điểm mạnh 2 bằng tiếng Việt>", ...],
-  "weaknesses": ["<điểm yếu 1 bằng tiếng Việt>", "<điểm yếu 2 bằng tiếng Việt>", ...],
-  "suggestions": ["<gợi ý 1 bằng tiếng Việt>", "<gợi ý 2 bằng tiếng Việt>", ...]
-}}
-
-YÊU CẦU BẮT BUỘC:
-- TẤT CẢ nội dung phải bằng TIẾNG VIỆT (trừ level và số điểm)
-- Mỗi điểm số PHẢI có cả score và reason trong cùng một object
-- Trả về CHỈ JSON object, không giải thích, không định dạng markdown
-- Không sử dụng \\n hoặc ký tự escape trong response
-- Mỗi string trong arrays phải là một dòng không có xuống dòng
-- Bắt đầu response trực tiếp với {{ và kết thúc bằng }}
-"""
+  "strengths": ["<điểm mạnh 1>", "<điểm mạnh 2>", ...],
+  "weaknesses": ["<điểm yếu 1>", "<điểm yếu 2>", ...],
+  "suggestions": ["<gợi ý 1>", "<gợi ý 2>", ...]
+}}"""
     
     return prompt
-

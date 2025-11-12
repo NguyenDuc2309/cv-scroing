@@ -11,7 +11,7 @@ import logging
 import time
 
 from config import config
-from models.schemas import CVAnalysisResponse, CVAnalysisData, Metadata, TokenUsage, ErrorResponse
+from models.schemas import CVAnalysisResponse, CVAnalysisData, Metadata, TokenUsage
 from services.extraction import extract_text
 from services.llm_service import get_llm_service
 
@@ -144,18 +144,6 @@ async def health():
             "description": "Successful analysis",
             "model": CVAnalysisResponse
         },
-        400: {
-            "description": "Bad request - Invalid file format, size, or content",
-            "model": ErrorResponse
-        },
-        429: {
-            "description": "Rate limit exceeded",
-            "model": ErrorResponse
-        },
-        500: {
-            "description": "Internal server error",
-            "model": ErrorResponse
-        }
     }
 )
 @limiter.limit(f"{config.RATE_LIMIT_PER_MINUTE}/minute")
@@ -166,24 +154,6 @@ async def upload_cv(
         description="CV file to analyze (PDF or DOCX format)"
     )
 ):
-    """
-    Upload and analyze a CV file using AI.
-    
-    This endpoint processes the uploaded CV file, extracts text content,
-    and uses AI (configured via LLM_PROVIDER in .env) to provide comprehensive 
-    analysis including scoring, level detection, field identification, and 
-    improvement suggestions.
-    
-    **Parameters:**
-    - **file**: The CV file to analyze (PDF or DOCX)
-    
-    **Returns:**
-    - Complete CV analysis with scores, level, field, strengths, weaknesses, and suggestions
-    
-    **Note:**
-    The LLM provider (Gemini or OpenAI) is determined by the LLM_PROVIDER 
-    environment variable. Make sure to set the corresponding API key in your .env file.
-    """
     # Start processing time tracking
     start_time = time.time()
     upload_time = datetime.now(timezone.utc).isoformat()
