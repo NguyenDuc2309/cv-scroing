@@ -154,4 +154,12 @@ PORT=3002
 - `slowapi`: Rate limiting
 - `python-dotenv`: Environment variables
 
+Logic chấm điểm:
+
+- Core/bonus criteria và cấu trúc JSON được định nghĩa trong `models/schemas.py`.
+- Prompt LLM được xây dựng trong `services/prompt_builder.py`.
+- `overall_score` được tính lại hoàn toàn ở backend trong `services/scoring.py` dựa trên:
+  - Cấp độ ứng viên (`intern`, `fresher`, `junior`, `mid`, `senior`).
+  - Bảng trọng số từng tiêu chí (core/bonus) cho mỗi level.
+
 Xem `requirements.txt` để biết đầy đủ danh sách dependencies.

@@ -1,12 +1,15 @@
 import json
 import re
+import logging
 from typing import Dict
 import google.generativeai as genai
 from openai import OpenAI
 from config import config
 from services.prompt_builder import build_cv_analysis_prompt
 from services.info_extractor import extract_info
-from services.level_detector import detect_level
+from services.scoring import calculate_overall_score
+
+logger = logging.getLogger(__name__)
 
 
 class LLMService:
@@ -68,12 +71,12 @@ class LLMService:
         else:
             return data
     
-    async def analyze_cv_with_gemini(self, cv_text: str, level: str, field: str = "") -> Dict:
+    async def analyze_cv_with_gemini(self, cv_text: str) -> Dict:
         if not self.gemini_model:
             raise ValueError("Gemini API key is not configured")
         
         try:
-            prompt = build_cv_analysis_prompt(cv_text, level, field)
+            prompt = build_cv_analysis_prompt(cv_text)
             response = self.gemini_model.generate_content(prompt)
             
             if not response.text:
@@ -108,12 +111,12 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Gemini API error: {str(e)}")
     
-    async def analyze_cv_with_openai(self, cv_text: str, level: str, field: str = "") -> Dict:
+    async def analyze_cv_with_openai(self, cv_text: str) -> Dict:
         if not self.openai_client:
             raise ValueError("OpenAI API key is not configured")
         
         try:
-            prompt = build_cv_analysis_prompt(cv_text, level, field)
+            prompt = build_cv_analysis_prompt(cv_text)
             
             model_lower = self.openai_model.lower()
             supports_json_mode = any(x in model_lower for x in [
@@ -155,22 +158,40 @@ class LLMService:
     
     async def analyze_cv(self, cv_text: str) -> Dict:
         extracted_info = extract_info(cv_text)
-        detected_level = detect_level(cv_text)
         
         if self.provider == "gemini":
-            result = await self.analyze_cv_with_gemini(cv_text, detected_level)
+            result = await self.analyze_cv_with_gemini(cv_text)
         elif self.provider == "openai":
-            result = await self.analyze_cv_with_openai(cv_text, detected_level)
+            result = await self.analyze_cv_with_openai(cv_text)
         else:
             raise ValueError(f"Unsupported provider: {self.provider}")
-        
-        result["level"] = detected_level
-        
+
+        llm_level = result.get("level", "junior")
+        if not llm_level or llm_level not in ["intern", "fresher", "junior", "mid", "senior"]:
+            llm_level = "junior"
+
+        result["level"] = llm_level
+
         if "info" in result and isinstance(result["info"], dict):
             extracted_info["location"] = result["info"].get("location", "")
-        
+
         result["info"] = extracted_info
-        
+
+        # Tính lại overall_score chính xác dựa trên level từ LLM và bảng trọng số backend
+        # Backend luôn override overall_score từ LLM để đảm bảo tính toán chính xác
+        try:
+            core_scores = result.get("core_scores", {})
+            bonus_scores = result.get("bonus_scores", {})
+            if isinstance(core_scores, dict) and isinstance(bonus_scores, dict):
+                calculated_overall = calculate_overall_score(llm_level, core_scores, bonus_scores)
+                result["overall_score"] = calculated_overall
+            else:
+                logger.warning(f"Missing core_scores or bonus_scores in LLM response. core_scores type: {type(core_scores)}, bonus_scores type: {type(bonus_scores)}")
+        except Exception as e:
+            logger.error(f"Error calculating overall_score: {e}. Keeping LLM's overall_score if available.")
+            if "overall_score" not in result:
+                result["overall_score"] = 0
+
         return result
 
 

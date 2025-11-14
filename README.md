@@ -28,17 +28,25 @@ Hệ thống backend sử dụng FastAPI và LLM (Google Gemini hoặc OpenAI) �
 4. LLM (Gemini/OpenAI) trả về JSON đúng cấu trúc quy định.
 5. API chuẩn hóa response, bổ sung metadata và trả về cho frontend.
 
-## Các tiêu chí chấm điểm
+## Các tiêu chí chấm điểm (Core vs Bonus)
 
-- `format`: Bố cục, cấu trúc, mức độ dễ đọc của CV.
-- `experience`: Kinh nghiệm liên quan trực tiếp đến lĩnh vực ứng viên.
-- `skills`: Hard skills quan trọng, đánh giá theo mức độ thành thạo.
-- `soft_skills`: Kỹ năng mềm được thể hiện trong CV.
-- `education`: Bằng cấp, chuyên ngành, GPA (nếu có).
-- `portfolio`: Dự án, sản phẩm, liên kết chứng minh năng lực.
-- `certificates`: Chứng chỉ chuyên môn và ngoại ngữ.
+- **Core criteria** (ảnh hưởng chính tới `overall_score`):
+  - `format`: Bố cục, cấu trúc, mức độ dễ đọc.
+  - `experience`: Kinh nghiệm liên quan trực tiếp đến lĩnh vực/role, số năm, impact.
+  - `skills`: Hard skills quan trọng, kèm mức độ thành thạo.
+  - `soft_skills`: Kỹ năng mềm (giao tiếp, teamwork, leadership, chủ động...).
+  - `education`: Bằng cấp, chuyên ngành, GPA (quan trọng hơn với intern/fresher).
+  - `field_match`: Mức độ CV khớp với field/role mục tiêu.
 
-Mỗi tiêu chí bao gồm `{ "score": 0-100, "reason": "lí do bằng tiếng Việt" }`.
+- **Bonus criteria** (có thì cộng, không có thì không trừ):
+  - `portfolio`: Dự án, sản phẩm, link GitHub/website/case study.
+  - `certificates`: Chứng chỉ liên quan field (nghề, online...).
+  - `awards`: Giải thưởng học thuật/cuộc thi.
+  - `scholarships`: Học bổng.
+  - `side_projects`: Dự án cá nhân ngoài chương trình chính thức.
+  - `community`: CLB, hoạt động cộng đồng, mentoring, đóng góp open source.
+
+Mỗi tiêu chí đều có dạng `{ "score": 0-100, "reason": "lí do bằng tiếng Việt" }`.
 
 ## Thông tin trích xuất bổ sung
 
@@ -50,6 +58,7 @@ Mỗi tiêu chí bao gồm `{ "score": 0-100, "reason": "lí do bằng tiếng V
 - Cấu hình `LLM_PROVIDER` để chuyển nhanh giữa `gemini` và `openai`.
 - Tracking `token_usage` (prompt, completion, total) để quản lý chi phí.
 - Hỗ trợ lazy initialization để tránh lỗi khi thiếu API key.
+- `overall_score` được tính lại ở backend dựa trên **bảng trọng số theo level** (intern/fresher/junior/mid/senior), không phụ thuộc hoàn toàn vào ước lượng của LLM.
 
 ## Hạn chế & lưu ý
 
