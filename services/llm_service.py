@@ -2,7 +2,7 @@ import json
 import re
 import logging
 from typing import Dict
-import google.generativeai as genai
+from google import genai
 from openai import OpenAI
 from config import config
 from services.prompt_builder import build_cv_analysis_prompt
@@ -17,9 +17,10 @@ class LLMService:
         self.provider = config.LLM_PROVIDER.lower()
         
         if config.GEMINI_API_KEY:
-            genai.configure(api_key=config.GEMINI_API_KEY)
-            self.gemini_model = genai.GenerativeModel('gemini-pro')
+            self.gemini_client = genai.Client()
+            self.gemini_model = "gemini-2.5-pro"
         else:
+            self.gemini_client = None
             self.gemini_model = None
         
         if config.OPENAI_API_KEY:
@@ -29,12 +30,12 @@ class LLMService:
                 max_retries=2,
                 http_client=None
             )
-            self.openai_model = config.OPENAI_MODEL
+            self.openai_model = "gpt-4o-mini"
         else:
             self.openai_client = None
             self.openai_model = None
         
-        if self.provider == "gemini" and not self.gemini_model:
+        if self.provider == "gemini" and not self.gemini_client:
             raise ValueError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
         elif self.provider == "openai" and not self.openai_client:
             raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
@@ -72,12 +73,15 @@ class LLMService:
             return data
     
     async def analyze_cv_with_gemini(self, cv_text: str) -> Dict:
-        if not self.gemini_model:
+        if not self.gemini_client:
             raise ValueError("Gemini API key is not configured")
         
         try:
             prompt = build_cv_analysis_prompt(cv_text)
-            response = self.gemini_model.generate_content(prompt)
+            response = self.gemini_client.models.generate_content(
+                model=self.gemini_model,
+                contents=prompt
+            )
             
             if not response.text:
                 raise ValueError("Empty response from Gemini API")
@@ -177,13 +181,21 @@ class LLMService:
 
         result["info"] = extracted_info
 
-        # Tính lại overall_score chính xác dựa trên level từ LLM và bảng trọng số backend
-        # Backend luôn override overall_score từ LLM để đảm bảo tính toán chính xác
+        credibility_issues = result.get("credibility_issues", [])
+        if not isinstance(credibility_issues, list):
+            credibility_issues = []
+        result["credibility_issues"] = credibility_issues
+
         try:
             core_scores = result.get("core_scores", {})
             bonus_scores = result.get("bonus_scores", {})
             if isinstance(core_scores, dict) and isinstance(bonus_scores, dict):
-                calculated_overall = calculate_overall_score(llm_level, core_scores, bonus_scores)
+                calculated_overall = calculate_overall_score(
+                    llm_level, 
+                    core_scores, 
+                    bonus_scores,
+                    credibility_issues=credibility_issues
+                )
                 result["overall_score"] = calculated_overall
             else:
                 logger.warning(f"Missing core_scores or bonus_scores in LLM response. core_scores type: {type(core_scores)}, bonus_scores type: {type(bonus_scores)}")

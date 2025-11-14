@@ -45,6 +45,7 @@ class CVAnalysisData(BaseModel):
     info: CVInfo = Field(..., description="Thông tin cơ bản trích xuất từ CV")
     core_scores: CoreScores = Field(..., description="Core Criteria - Tiêu chí chính (0-100)")
     bonus_scores: BonusScores = Field(..., description="Bonus Criteria - Tiêu chí cộng điểm (0-100, không có → 30-40 điểm)")
+    credibility_issues: List[str] = Field(default_factory=list, description="Danh sách các vấn đề về độ tin cậy CV (ví dụ: mốc thời gian tương lai, thông tin không nhất quán)")
     strengths: List[str] = Field(..., description="Danh sách điểm mạnh của CV (tiếng Việt)")
     weaknesses: List[str] = Field(..., description="Danh sách điểm yếu của CV (tiếng Việt)")
     suggestions: List[str] = Field(..., description="Gợi ý cải thiện CV (tiếng Việt)")
