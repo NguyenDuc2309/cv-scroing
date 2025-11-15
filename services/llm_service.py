@@ -43,34 +43,17 @@ class LLMService:
             raise ValueError(f"Unsupported LLM provider: {self.provider}")
     
     def _extract_json_from_response(self, text: str) -> Dict:
-        text = re.sub(r'```json\s*', '', text)
-        text = re.sub(r'```\s*', '', text)
-        text = text.strip()
-        
-        json_match = re.search(r'\{.*\}', text, re.DOTALL)
+        text = re.sub(r'```json\s*|```\s*', '', text).strip()
+        json_match = re.search(r'\{[\s\S]*\}', text)
         if json_match:
-            json_str = json_match.group(0)
             try:
-                parsed = json.loads(json_str)
-                return self._clean_json_response(parsed)
+                return json.loads(json_match.group(0))
             except json.JSONDecodeError:
                 pass
-        
         try:
-            parsed = json.loads(text)
-            return self._clean_json_response(parsed)
+            return json.loads(text)
         except json.JSONDecodeError as e:
             raise ValueError(f"Could not parse JSON from LLM response: {str(e)}")
-    
-    def _clean_json_response(self, data: Dict) -> Dict:
-        if isinstance(data, dict):
-            return {k: self._clean_json_response(v) for k, v in data.items()}
-        elif isinstance(data, list):
-            return [self._clean_json_response(item) for item in data]
-        elif isinstance(data, str):
-            return data
-        else:
-            return data
     
     async def analyze_cv_with_gemini(self, cv_text: str) -> Dict:
         if not self.gemini_client:
@@ -88,27 +71,18 @@ class LLMService:
             
             result = self._extract_json_from_response(response.text)
             
-            token_usage = None
             try:
-                if hasattr(response, 'usage_metadata') and response.usage_metadata:
-                    usage = response.usage_metadata
+                usage = getattr(response, 'usage_metadata', None) or getattr(response, 'usage', None)
+                if usage:
                     token_usage = {
                         "prompt_tokens": getattr(usage, 'prompt_token_count', 0) or 0,
-                        "completion_tokens": getattr(usage, 'candidates_token_count', 0) or 0,
-                        "total_tokens": getattr(usage, 'total_token_count', 0) or 0
+                        "completion_tokens": getattr(usage, 'candidates_token_count', 0) or getattr(usage, 'completion_tokens', 0) or 0,
+                        "total_tokens": getattr(usage, 'total_token_count', 0) or getattr(usage, 'total_tokens', 0) or 0
                     }
-                elif hasattr(response, 'usage') and response.usage:
-                    usage = response.usage
-                    token_usage = {
-                        "prompt_tokens": getattr(usage, 'prompt_token_count', 0) or 0,
-                        "completion_tokens": getattr(usage, 'candidates_token_count', 0) or 0,
-                        "total_tokens": getattr(usage, 'total_token_count', 0) or 0
-                    }
+                    if token_usage.get("total_tokens", 0) > 0:
+                        result["_token_usage"] = token_usage
             except Exception:
-                token_usage = None
-            
-            if token_usage and token_usage.get("total_tokens", 0) > 0:
-                result["_token_usage"] = token_usage
+                pass
             
             return result
         
@@ -122,21 +96,16 @@ class LLMService:
         try:
             prompt = build_cv_analysis_prompt(cv_text)
             
-            model_lower = self.openai_model.lower()
-            supports_json_mode = any(x in model_lower for x in [
-                "gpt-4", "gpt-3.5-turbo", "gpt-4o", "gpt-4-turbo"
-            ])
-            
             request_params = {
                 "model": self.openai_model,
                 "messages": [
-                    {"role": "system", "content": "Bạn là chuyên gia phân tích CV. Luôn trả về kết quả dưới dạng JSON hợp lệ bằng tiếng Việt. Tất cả nội dung text phải bằng tiếng Việt."},
+                    {"role": "system", "content": "Chuyên gia phân tích CV. Trả về JSON hợp lệ bằng tiếng Việt."},
                     {"role": "user", "content": prompt}
                 ],
                 "temperature": 0.3,
             }
             
-            if supports_json_mode:
+            if any(x in self.openai_model.lower() for x in ["gpt-4", "gpt-3.5-turbo", "gpt-4o"]):
                 request_params["response_format"] = {"type": "json_object"}
             
             response = self.openai_client.chat.completions.create(**request_params)

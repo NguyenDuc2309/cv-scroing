@@ -1,56 +1,33 @@
 def build_cv_analysis_prompt(cv_text: str) -> str:
-    prompt = f"""Phân tích CV và đánh giá chất lượng. Trả về CHỈ JSON object hợp lệ, KHÔNG markdown hay text bổ sung.
+    prompt = f"""Phân tích CV và trả về CHỈ JSON hợp lệ, KHÔNG markdown.
 
 CV:
 {cv_text}
 
-QUY TẮC CHẤM ĐIỂM:
-- Tuân theo quy tắc backend đã định nghĩa, KHÔNG sáng tạo hay thay đổi rule.
-- Mỗi score (0-100) phải có reason cụ thể, dẫn chứng từ CV.
-- Backend sẽ tính lại overall_score theo trọng số từng level và override giá trị bạn đưa ra.
-
-TIÊU CHÍ CHẤM ĐIỂM:
+QUY TẮC:
+- Mỗi score (0-100) kèm reason cụ thể từ CV.
+- Backend sẽ tính lại overall_score theo trọng số level.
 
 CORE (6 tiêu chí):
-1. format: Bố cục, logic, dễ đọc, rõ ràng.
-2. experience: Kinh nghiệm liên quan field, số năm, vai trò, impact. PHÂN BIỆT intern/trainee vs full-time: intern/trainee chỉ tính ~30% giá trị. Nếu chỉ có intern/trainee → không thể là mid/senior.
-3. skills: Hard skills theo field + mức độ basic/intermediate/advanced.
-4. soft_skills: Giao tiếp, teamwork, leadership, chủ động.
-5. education: Bằng cấp, chuyên ngành, GPA (quan trọng cho intern/fresher).
-6. field_match: CV có định hướng ngành rõ ràng (hoặc suy luận từ kinh nghiệm).
+format: Bố cục, logic, dễ đọc.
+experience: Kinh nghiệm field, số năm, vai trò, impact. PHÂN BIỆT intern/trainee (~30%) vs full-time. Chỉ intern/trainee → không thể mid/senior.
+skills: Hard skills theo field + mức độ.
+soft_skills: Giao tiếp, teamwork, leadership.
+education: Bằng cấp, chuyên ngành, GPA (quan trọng intern/fresher).
+field_match: Định hướng ngành rõ ràng.
 
-BONUS (6 tiêu chí, không có → mặc định 30-40 điểm):
-7. portfolio: Link website/case study/dự án.
-8. certificates: Chứng chỉ liên quan field.
-9. awards: Giải thưởng học thuật, cuộc thi, ranking.
-10. scholarships: Học bổng.
-11. side_projects: Dự án cá nhân.
-12. community: CLB, hoạt động xã hội, mentoring.
+BONUS (6 tiêu chí, không có → 30-40 điểm):
+portfolio, certificates, awards, scholarships, side_projects, community.
 
-PHÁT HIỆN VẤN ĐỀ ĐỘ TIN CẬY:
-- credibility_issues: Mảng các vấn đề về độ tin cậy CV.
-- Mốc thời gian tương lai → "Mốc thời gian kinh nghiệm trong tương lai: [chi tiết]".
-- Thông tin không nhất quán → "Thông tin không nhất quán: [chi tiết]".
-- Không có vấn đề → mảng rỗng [].
+credibility_issues: Mảng vấn đề độ tin cậy (mốc thời gian tương lai, thông tin không nhất quán). Không có → [].
 
-LEVEL DETECTION:
-- intern: < 0.5 năm hoặc không có kinh nghiệm
-- fresher: 0.5-1.5 năm (có thể mix intern/trainee + full-time)
-- junior: 1-3 năm FULL-TIME thực tế
-- mid: 3-5 năm FULL-TIME thực tế
-- senior: 5+ năm FULL-TIME thực tế, impact lớn, vai trò chính/leadership
-- QUAN TRỌNG: Nếu chỉ có intern/trainee → KHÔNG THỂ là mid/senior.
+LEVEL: intern (<0.5 năm) | fresher (0.5-1.5 năm) | junior (1-3 năm full-time) | mid (3-5 năm) | senior (5+ năm). Chỉ intern/trainee → max fresher.
 
-THÔNG TIN KHÁC:
-- field: Lấy từ mục tiêu nghề nghiệp/lĩnh vực trong CV, hoặc suy luận từ kinh nghiệm + skills. Không bịa đặt.
-- info.location: Trích xuất địa chỉ/thành phố từ CV, để trống "" nếu không tìm thấy.
-- strengths: 3-5 điểm mạnh nổi bật, tiếng Việt, mỗi phần tử 1 câu ngắn.
-- weaknesses: 3-5 điểm cần cải thiện, liên quan field/level, tiếng Việt, mỗi phần tử 1 câu ngắn.
-- suggestions: 3-5 gợi ý cải thiện CV, logic theo level/field, tiếng Việt, mỗi phần tử 1 câu ngắn.
+field: Từ mục tiêu nghề nghiệp hoặc suy luận từ kinh nghiệm+skills.
+info.location: Địa chỉ/thành phố, để "" nếu không có.
+strengths/weaknesses/suggestions: 3-5 mục, tiếng Việt, mỗi phần tử 1 câu ngắn.
 
-YÊU CẦU:
-- TẤT CẢ nội dung bằng TIẾNG VIỆT (trừ level và số điểm).
-- Trả về CHỈ JSON object, không escape, không xuống dòng trong arrays.
+YÊU CẦU: TẤT CẢ nội dung TIẾNG VIỆT (trừ level và số điểm). CHỈ JSON, không escape, không xuống dòng trong arrays.
 
 {{
   "overall_score": <0-100>,

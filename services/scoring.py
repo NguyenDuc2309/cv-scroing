@@ -34,45 +34,45 @@ BONUS_CAP: Dict[str, float] = {
 
 LEVEL_WEIGHTS: Dict[str, Dict[str, float]] = {
     "intern": {
-        "format": 15,
-        "experience": 15,
-        "skills": 20,
-        "soft_skills": 15,
-        "education": 20,
-        "field_match": 15,
+      "format": 20,
+      "experience": 10,
+      "skills": 25,
+      "soft_skills": 15,
+      "education": 20,
+      "field_match": 10
     },
     "fresher": {
-        "experience": 37,
-        "skills": 24,
-        "soft_skills": 13,
-        "education": 13,
-        "format": 7,
-        "field_match": 6,
+      "experience": 25,
+      "skills": 30,
+      "soft_skills": 15,
+      "education": 15,
+      "format": 10,
+      "field_match": 5
     },
     "junior": {
-        "experience": 40,
-        "skills": 30,
-        "soft_skills": 15,
-        "format": 5,
-        "field_match": 5,
-        "education": 5,
+      "experience": 45,
+      "skills": 30,
+      "soft_skills": 15,
+      "format": 5,
+      "field_match": 3,
+      "education": 2
     },
     "mid": {
-        "experience": 50,
-        "skills": 30,
-        "soft_skills": 15,
-        "format": 5,
-        "field_match": 0,
-        "education": 0,
+      "experience": 55,
+      "skills": 30,
+      "soft_skills": 15,
+      "format": 0,
+      "field_match": 0,
+      "education": 0
     },
     "senior": {
-        "experience": 60,
-        "skills": 30,
-        "soft_skills": 10,
-        "format": 0,
-        "field_match": 0,
-        "education": 0,
-    },
+      "experience": 55,
+      "skills": 30,
+      "soft_skills": 10,
+      "format": 0,
+      "field_match": 0,
+      "education": 5
+    }
 }
 
 
