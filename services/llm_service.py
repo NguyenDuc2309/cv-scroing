@@ -18,7 +18,7 @@ class LLMService:
         
         if config.GEMINI_API_KEY:
             self.gemini_client = genai.Client()
-            self.gemini_model = "gemini-2.5-pro"
+            self.gemini_model = "gemini-2.5-flash-lite"
         else:
             self.gemini_client = None
             self.gemini_model = None
