@@ -123,24 +123,6 @@ def calculate_overall_score(
     bonus_scores: Dict[str, Dict[str, Any]],
     credibility_issues: list = None
 ) -> int:
-    """
-    Tính overall_score chính xác dựa trên level và bảng trọng số core/bonus.
-    
-    Công thức mới:
-    - Core score = weighted sum của 6 core items (trọng số tổng = 100%)
-    - Bonus avg = trung bình của 6 bonus items (missing → neutral 35)
-    - Overall = core_score * (1 - bonus_cap) + bonus_avg * bonus_cap
-    - Apply credibility_penalty nếu có
-    
-    Args:
-        level: Level của ứng viên (intern, fresher, junior, mid, senior)
-        core_scores: Dict chứa scores của 6 core criteria
-        bonus_scores: Dict chứa scores của 6 bonus criteria
-        credibility_issues: Danh sách các vấn đề về độ tin cậy (optional)
-    
-    Returns:
-        int: Điểm tổng thể (0-100) được tính toán chính xác theo trọng số.
-    """
     norm_level = _normalize_level(level)
     core_weights = LEVEL_WEIGHTS.get(norm_level, LEVEL_WEIGHTS["junior"])
     bonus_cap = BONUS_CAP.get(norm_level, BONUS_CAP["junior"])

@@ -3,7 +3,6 @@ import re
 import logging
 from typing import Dict
 from google import genai
-from openai import OpenAI
 from config import config
 from services.prompt_builder import build_cv_analysis_prompt
 from services.info_extractor import extract_info
@@ -14,33 +13,11 @@ logger = logging.getLogger(__name__)
 
 class LLMService:
     def __init__(self):
-        self.provider = config.LLM_PROVIDER.lower()
+        if not config.GEMINI_API_KEY:
+            raise ValueError("GEMINI_API_KEY is required")
         
-        if config.GEMINI_API_KEY:
-            self.gemini_client = genai.Client()
-            self.gemini_model = "gemini-2.5-flash-lite"
-        else:
-            self.gemini_client = None
-            self.gemini_model = None
-        
-        if config.OPENAI_API_KEY:
-            self.openai_client = OpenAI(
-                api_key=config.OPENAI_API_KEY,
-                timeout=60.0,
-                max_retries=2,
-                http_client=None
-            )
-            self.openai_model = "gpt-4o-mini"
-        else:
-            self.openai_client = None
-            self.openai_model = None
-        
-        if self.provider == "gemini" and not self.gemini_client:
-            raise ValueError("GEMINI_API_KEY is required when LLM_PROVIDER=gemini")
-        elif self.provider == "openai" and not self.openai_client:
-            raise ValueError("OPENAI_API_KEY is required when LLM_PROVIDER=openai")
-        elif self.provider not in ["gemini", "openai"]:
-            raise ValueError(f"Unsupported LLM provider: {self.provider}")
+        self.gemini_client = genai.Client()
+        self.gemini_model = "gemini-2.5-flash-lite"
     
     def _extract_json_from_response(self, text: str) -> Dict:
         text = re.sub(r'```json\s*|```\s*', '', text).strip()
@@ -56,9 +33,6 @@ class LLMService:
             raise ValueError(f"Could not parse JSON from LLM response: {str(e)}")
     
     async def analyze_cv_with_gemini(self, cv_text: str) -> Dict:
-        if not self.gemini_client:
-            raise ValueError("Gemini API key is not configured")
-        
         try:
             prompt = build_cv_analysis_prompt(cv_text)
             response = self.gemini_client.models.generate_content(
@@ -89,55 +63,10 @@ class LLMService:
         except Exception as e:
             raise Exception(f"Gemini API error: {str(e)}")
     
-    async def analyze_cv_with_openai(self, cv_text: str) -> Dict:
-        if not self.openai_client:
-            raise ValueError("OpenAI API key is not configured")
-        
-        try:
-            prompt = build_cv_analysis_prompt(cv_text)
-            
-            request_params = {
-                "model": self.openai_model,
-                "messages": [
-                    {"role": "system", "content": "Chuyên gia phân tích CV. Trả về JSON hợp lệ bằng tiếng Việt."},
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.3,
-            }
-            
-            if any(x in self.openai_model.lower() for x in ["gpt-4", "gpt-3.5-turbo", "gpt-4o"]):
-                request_params["response_format"] = {"type": "json_object"}
-            
-            response = self.openai_client.chat.completions.create(**request_params)
-            
-            content = response.choices[0].message.content
-            if not content:
-                raise ValueError("Empty response from OpenAI API")
-            
-            result = self._extract_json_from_response(content)
-            
-            if hasattr(response, 'usage') and response.usage:
-                token_usage = {
-                    "prompt_tokens": response.usage.prompt_tokens,
-                    "completion_tokens": response.usage.completion_tokens,
-                    "total_tokens": response.usage.total_tokens
-                }
-                result["_token_usage"] = token_usage
-            
-            return result
-        
-        except Exception as e:
-            raise Exception(f"OpenAI API error: {str(e)}")
-    
     async def analyze_cv(self, cv_text: str) -> Dict:
         extracted_info = extract_info(cv_text)
         
-        if self.provider == "gemini":
-            result = await self.analyze_cv_with_gemini(cv_text)
-        elif self.provider == "openai":
-            result = await self.analyze_cv_with_openai(cv_text)
-        else:
-            raise ValueError(f"Unsupported provider: {self.provider}")
+        result = await self.analyze_cv_with_gemini(cv_text)
 
         llm_level = result.get("level", "junior")
         if not llm_level or llm_level not in ["intern", "fresher", "junior", "mid", "senior"]:

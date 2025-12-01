@@ -5,15 +5,6 @@ from docx import Document
 
 
 async def extract_text_from_pdf(content: bytes) -> str:
-    """
-    Extract text from PDF file using PyMuPDF (fitz).
-    
-    Args:
-        content: PDF file content as bytes
-        
-    Returns:
-        Extracted text content
-    """
     try:
         pdf_file = io.BytesIO(content)
         pdf_document = fitz.open(stream=pdf_file, filetype="pdf")
@@ -61,15 +52,6 @@ async def extract_text_from_pdf(content: bytes) -> str:
 
 
 async def extract_text_from_docx(content: bytes) -> str:
-    """
-    Extract text from DOCX file.
-    
-    Args:
-        content: DOCX file content as bytes
-        
-    Returns:
-        Extracted text content
-    """
     try:
         docx_file = io.BytesIO(content)
         doc = Document(docx_file)
@@ -105,16 +87,6 @@ async def extract_text_from_docx(content: bytes) -> str:
 
 
 async def extract_text(content: bytes, filename: str) -> str:
-    """
-    Extract text from uploaded file based on file extension.
-    
-    Args:
-        content: File content as bytes
-        filename: Name of the uploaded file
-        
-    Returns:
-        Extracted text content
-    """
     filename_lower = filename.lower()
     
     if filename_lower.endswith('.pdf'):
